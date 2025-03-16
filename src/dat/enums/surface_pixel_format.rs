@@ -1,7 +1,7 @@
 use deku::{DekuRead, DekuWrite};
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq, DekuRead, DekuWrite)]
+#[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 #[deku(id_type = "i32")]
 pub enum SurfacePixelFormat {
     PFID_UNKNOWN = 0,

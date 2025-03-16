@@ -5,7 +5,7 @@ use image::{DynamicImage, ImageBuffer, RgbaImage};
 
 use crate::dat::enums::surface_pixel_format::SurfacePixelFormat;
 
-#[derive(Debug, PartialEq, DekuRead, DekuWrite)]
+#[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
 pub struct Texture {
     pub unknown: i32, // This is sometimes 6? Seems used somehow.
     pub width: i32,
@@ -60,6 +60,7 @@ impl Texture {
             image::imageops::FilterType::Lanczos3,
         ))
     }
+
     pub fn to_png(&self, path: &str, scale: u32) -> Result<(), std::io::Error> {
         let image = self.to_image(scale)?;
         let file = File::create(path)?;
