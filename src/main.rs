@@ -1,7 +1,4 @@
-use std::{
-    fs::File,
-    io::{BufWriter, Seek},
-};
+use std::{fs::File, io::Seek};
 
 use deku::DekuContainerRead;
 use libac_rs::{dat::file_types::texture::Texture, icon::Icon};

@@ -1,10 +1,7 @@
-use std::{
-    fs::File,
-    io::{BufWriter, Error, ErrorKind},
-};
+use std::{fs::File, io::BufWriter};
 
 use deku::{DekuRead, DekuWrite};
-use image::{DynamicImage, ImageBuffer, RgbImage, RgbaImage};
+use image::{DynamicImage, ImageBuffer, RgbaImage};
 
 use crate::dat::enums::surface_pixel_format::SurfacePixelFormat;
 
@@ -58,7 +55,7 @@ impl Texture {
     pub fn to_image(&self, scale: u32) -> Result<DynamicImage, std::io::Error> {
         let buf = self.export()?;
         let img: RgbaImage = ImageBuffer::from_raw(self.width as u32, self.height as u32, buf)
-            .expect("Failed to create ImageBuffer for PFID_R8G8B8");
+            .expect("Failed to create ImageBuffer from exported texture.");
 
         let mut dynamic_image = DynamicImage::ImageRgba8(img);
 
