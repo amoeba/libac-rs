@@ -1,8 +1,8 @@
-use deku::{DekuRead, DekuWrite};
+use num_derive::FromPrimitive;
 
 #[allow(non_camel_case_types)]
-#[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
-#[deku(id_type = "i32")]
+#[derive(Clone, Debug, PartialEq, FromPrimitive)]
+#[repr(i32)]
 pub enum SurfacePixelFormat {
     PFID_UNKNOWN = 0,
     PFID_R8G8B8 = 20,

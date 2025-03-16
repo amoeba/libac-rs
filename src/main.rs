@@ -1,6 +1,5 @@
 use std::{fs::File, io::Seek};
 
-use deku::DekuContainerRead;
 use libac_rs::{dat::file_types::texture::Texture, icon::Icon};
 
 fn main() -> Result<(), std::io::Error> {
@@ -12,7 +11,7 @@ fn main() -> Result<(), std::io::Error> {
     for offset in offsets {
         file.seek(std::io::SeekFrom::Start(offset + 8))?; // (skip first two DWORDS for now)
 
-        let (_, texture) = Texture::from_reader((&mut file, 0))?;
+        let texture = Texture::read(&mut file)?;
 
         // Offset: 184571904
         // file.seek(std::io::SeekFrom::Start(184592384+8))?;

@@ -1,23 +1,67 @@
+use crate::dat::enums::surface_pixel_format::SurfacePixelFormat;
+use byteorder::LittleEndian;
+use byteorder::ReadBytesExt;
+use image::{DynamicImage, ImageBuffer, RgbaImage};
+use num_traits::FromPrimitive;
 use std::{fs::File, io::BufWriter};
 
-use deku::{DekuRead, DekuWrite};
-use image::{DynamicImage, ImageBuffer, RgbaImage};
-
-use crate::dat::enums::surface_pixel_format::SurfacePixelFormat;
-
-#[derive(Clone, Debug, PartialEq, DekuRead, DekuWrite)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Texture {
     pub unknown: i32, // This is sometimes 6? Seems used somehow.
     pub width: i32,
     pub height: i32,
     pub format: SurfacePixelFormat,
     pub length: i32,
-    #[deku(count = "length")]
     pub data: Vec<u8>,
-    pub default_palette_id: Option<u32>, // TODO: Not fully hooked up
+    pub default_palette_id: Option<u32>,
 }
 
 impl Texture {
+    pub fn read<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let unknown = reader.read_i32::<LittleEndian>()?;
+        let width = reader.read_i32::<LittleEndian>()?;
+        let height = reader.read_i32::<LittleEndian>()?;
+
+        let format_value = reader.read_i32::<LittleEndian>()?;
+        let format = FromPrimitive::from_i32(format_value).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Invalid pixel format: {}", format_value),
+            )
+        })?;
+
+        let length = reader.read_i32::<LittleEndian>()?;
+
+        // data
+        let mut data = vec![0u8; length as usize];
+        reader.read_exact(&mut data)?;
+
+        // default_palette_id
+        let mut palette_id_bytes = [0u8; 4];
+        let default_palette_id = match format {
+            SurfacePixelFormat::PFID_P8 | SurfacePixelFormat::PFID_INDEX16 => {
+                match reader.read_exact(&mut palette_id_bytes) {
+                    Ok(_) => {
+                        let id = u32::from_le_bytes(palette_id_bytes);
+                        Some(id)
+                    }
+                    Err(_) => None,
+                }
+            }
+            _ => None,
+        };
+
+        Ok(Texture {
+            unknown,
+            width,
+            height,
+            format,
+            length,
+            data,
+            default_palette_id,
+        })
+    }
+
     /// export underlying file buffer to rgba-ordered Vec<u8>
     ///
     /// Normalizes input into [R,G,B,A] to simplify downstream code
