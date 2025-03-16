@@ -14,7 +14,7 @@
 // { "piercing", 0x060033C4 },
 // { "reversed", 0x06004C3E } // for spells
 
-use std::{fs::File, io::BufWriter};
+use std::{fs::File, io::{BufWriter, Cursor}};
 
 use image::{DynamicImage, ImageBuffer, Pixel, Rgba, RgbaImage};
 
@@ -89,7 +89,23 @@ impl Icon {
         Ok(blended_image)
     }
 
-    pub fn export(&self, path: &str) -> Result<(), std::io::Error> {
+    pub fn export(&self) -> Result<Vec<u8>, std::io::Error> {
+        let blended = self.blend()?;
+
+        let image = DynamicImage::ImageRgba8(blended).resize(
+            self.width * self.scale,
+            self.height * self.scale,
+            image::imageops::FilterType::Lanczos3,
+        );
+
+        let mut buffer = Vec::new();
+        let mut cursor = Cursor::new(&mut buffer);
+        let _ = image.write_to(&mut cursor, image::ImageFormat::Png);
+
+        Ok(buffer)
+    }
+
+    pub fn export_to_file(&self, path: &str) -> Result<(), std::io::Error> {
         let blended = self.blend()?;
 
         let image = DynamicImage::ImageRgba8(blended).resize(

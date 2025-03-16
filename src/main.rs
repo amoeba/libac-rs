@@ -29,7 +29,7 @@ fn main() -> Result<(), std::io::Error>{
         effect: None,
     };
 
-    icon.export("icon.png")?;
+    icon.export_to_file("icon.png")?;
 
     Ok(())
 }
