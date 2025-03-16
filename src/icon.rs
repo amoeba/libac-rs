@@ -14,7 +14,10 @@
 // { "piercing", 0x060033C4 },
 // { "reversed", 0x06004C3E } // for spells
 
-use std::{fs::File, io::{BufWriter, Cursor}};
+use std::{
+    fs::File,
+    io::{BufWriter, Cursor},
+};
 
 use image::{DynamicImage, ImageBuffer, Pixel, Rgba, RgbaImage};
 

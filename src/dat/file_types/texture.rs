@@ -1,7 +1,10 @@
-use std::{fs::File, io::BufWriter};
+use std::{
+    fs::File,
+    io::{BufWriter, Error, ErrorKind},
+};
 
 use deku::{DekuRead, DekuWrite};
-use image::{DynamicImage, ImageBuffer, RgbaImage};
+use image::{DynamicImage, ImageBuffer, RgbImage, RgbaImage};
 
 use crate::dat::enums::surface_pixel_format::SurfacePixelFormat;
 
@@ -18,6 +21,9 @@ pub struct Texture {
 }
 
 impl Texture {
+    /// export underlying file buffer to rgba-ordered Vec<u8>
+    ///
+    /// Normalizes input into [R,G,B,A] to simplify downstream code
     pub fn export(&self) -> Result<Vec<u8>, std::io::Error> {
         match self.format {
             SurfacePixelFormat::PFID_R8G8B8 => {
@@ -26,8 +32,8 @@ impl Texture {
                     .data
                     .chunks_exact(3)
                     .flat_map(|chunk| {
-                        // [B,G,R] -> [R,G,B]
-                        [chunk[2], chunk[1], chunk[0]]
+                        // [B,G,R] -> [R,G,B,255]
+                        [chunk[2], chunk[1], chunk[0], 255]
                     })
                     .collect();
 
@@ -52,13 +58,19 @@ impl Texture {
     pub fn to_image(&self, scale: u32) -> Result<DynamicImage, std::io::Error> {
         let buf = self.export()?;
         let img: RgbaImage = ImageBuffer::from_raw(self.width as u32, self.height as u32, buf)
-            .expect("Failed to create ImageBuffer");
+            .expect("Failed to create ImageBuffer for PFID_R8G8B8");
 
-        Ok(DynamicImage::ImageRgba8(img).resize(
-            (self.width as u32) * scale,
-            (self.height as u32) * scale,
-            image::imageops::FilterType::Lanczos3,
-        ))
+        let mut dynamic_image = DynamicImage::ImageRgba8(img);
+
+        if scale > 1 {
+            dynamic_image = dynamic_image.resize(
+                (self.width as u32) * scale,
+                (self.height as u32) * scale,
+                image::imageops::FilterType::Lanczos3,
+            )
+        }
+
+        Ok(dynamic_image)
     }
 
     pub fn to_png(&self, path: &str, scale: u32) -> Result<(), std::io::Error> {
