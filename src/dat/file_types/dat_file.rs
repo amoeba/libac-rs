@@ -2,39 +2,21 @@ use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use std::io::{Read, Result};
 
-use super::texture::Texture;
-
-// TODO: Implement more readers
-#[derive(Debug)]
-pub enum DatFileType {
-    Texture(Texture),
-}
-
-pub trait DatFileRead: IntoDatFileType + Sized {
+pub trait DatFileRead: Sized {
     fn read<R: Read>(reader: &mut R) -> Result<Self>;
 }
 
-pub trait IntoDatFileType {
-    fn into(self) -> DatFileType;
-}
-
 #[derive(Debug)]
-pub struct DatFile {
+pub struct DatFile<T> {
     pub id: i32,
-    pub inner: DatFileType,
+    pub inner: T,
 }
 
-impl DatFile {
-    pub fn read<T: DatFileRead, R: Read>(reader: &mut R) -> Result<Self> {
+impl<T: DatFileRead> DatFile<T> {
+    pub fn read<R: Read>(reader: &mut R) -> Result<Self> {
         let id = reader.read_i32::<LittleEndian>()?;
         let inner = T::read(reader)?.into();
 
         Ok(Self { id, inner })
-    }
-
-    pub fn into(self) -> DatFileType {
-        match self.inner {
-            DatFileType::Texture(texture) => DatFileType::Texture(texture),
-        }
     }
 }

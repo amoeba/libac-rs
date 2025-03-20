@@ -6,8 +6,6 @@ use num_traits::FromPrimitive;
 use std::{fs::File, io::BufWriter};
 
 use super::dat_file::DatFileRead;
-use super::dat_file::DatFileType;
-use super::dat_file::IntoDatFileType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Texture {
@@ -18,12 +16,6 @@ pub struct Texture {
     pub length: i32,
     pub data: Vec<u8>,
     pub default_palette_id: Option<u32>,
-}
-
-impl IntoDatFileType for Texture {
-    fn into(self) -> DatFileType {
-        DatFileType::Texture(self)
-    }
 }
 
 impl DatFileRead for Texture {
