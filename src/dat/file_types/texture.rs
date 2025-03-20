@@ -5,6 +5,8 @@ use image::{DynamicImage, ImageBuffer, RgbaImage};
 use num_traits::FromPrimitive;
 use std::{fs::File, io::BufWriter};
 
+use super::dat_file::DatFileRead;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Texture {
     pub unknown: i32, // This is sometimes 6? Seems used somehow.
@@ -16,8 +18,8 @@ pub struct Texture {
     pub default_palette_id: Option<u32>,
 }
 
-impl Texture {
-    pub fn read<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+impl DatFileRead for Texture {
+    fn read<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let unknown = reader.read_i32::<LittleEndian>()?;
         let width = reader.read_i32::<LittleEndian>()?;
         let height = reader.read_i32::<LittleEndian>()?;
@@ -61,7 +63,9 @@ impl Texture {
             default_palette_id,
         })
     }
+}
 
+impl Texture {
     /// export underlying file buffer to rgba-ordered Vec<u8>
     ///
     /// Normalizes input into [R,G,B,A] to simplify downstream code
