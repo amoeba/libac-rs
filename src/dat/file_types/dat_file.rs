@@ -37,9 +37,6 @@ impl DatFile {
             }
         };
 
-        Ok(Self {
-            id: id,
-            inner: inner,
-        })
+        Ok(Self { id, inner })
     }
 }
