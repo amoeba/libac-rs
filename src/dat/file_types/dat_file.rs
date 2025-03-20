@@ -1,6 +1,5 @@
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
-use std::io;
 use std::io::{Read, Result};
 
 use super::texture::Texture;
@@ -11,8 +10,12 @@ pub enum DatFileType {
     Texture(Texture),
 }
 
-pub trait DatFileRead: Sized {
+pub trait DatFileRead: IntoDatFileType + Sized {
     fn read<R: Read>(reader: &mut R) -> Result<Self>;
+}
+
+pub trait IntoDatFileType {
+    fn into(self) -> DatFileType;
 }
 
 #[derive(Debug)]
@@ -24,18 +27,7 @@ pub struct DatFile {
 impl DatFile {
     pub fn read<T: DatFileRead, R: Read>(reader: &mut R) -> Result<Self> {
         let id = reader.read_i32::<LittleEndian>()?;
-
-        let inner = match std::any::type_name::<T>() {
-            "libac_rs::dat::file_types::texture::Texture" => {
-                DatFileType::Texture(Texture::read(reader)?)
-            }
-            x => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("Unsupported type: {}", x),
-                ));
-            }
-        };
+        let inner = T::read(reader)?.into();
 
         Ok(Self { id, inner })
     }
