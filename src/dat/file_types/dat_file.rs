@@ -31,4 +31,10 @@ impl DatFile {
 
         Ok(Self { id, inner })
     }
+
+    pub fn into(self) -> DatFileType {
+        match self.inner {
+            DatFileType::Texture(texture) => DatFileType::Texture(texture),
+        }
+    }
 }

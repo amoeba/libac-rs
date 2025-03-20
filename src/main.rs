@@ -39,9 +39,9 @@ fn main() -> Result<(), std::io::Error> {
     let mut file = File::open("../libac-js/out.bin")?;
     file.seek(SeekFrom::Start(0))?;
 
-    let f = DatFile::read::<Texture, _>(&mut file)?;
+    let texture = DatFile::read::<Texture, _>(&mut file)?.into();
 
-    println!("{:?}", f);
+    println!("{:?}", texture);
 
     Ok(())
 }
