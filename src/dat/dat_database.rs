@@ -66,7 +66,7 @@ pub struct DatDatabaseHeader {
     engine_pack_version: u32,
     game_pack_version: u32,
     version_major: Vec<u8>,
-    version_minor: u8,
+    version_minor: u32,
 }
 
 impl DatDatabaseHeader {
@@ -84,13 +84,13 @@ impl DatDatabaseHeader {
         let btree = reader.read_u32::<LittleEndian>()?;
         let new_lru = reader.read_u32::<LittleEndian>()?;
         let old_lru = reader.read_u32::<LittleEndian>()?;
-        let use_lru = reader.read_u32::<LittleEndian>()? != 0;
+        let use_lru = reader.read_u32::<LittleEndian>()? == 1;
         let master_map_id = reader.read_u32::<LittleEndian>()?;
         let engine_pack_version = reader.read_u32::<LittleEndian>()?;
         let game_pack_version = reader.read_u32::<LittleEndian>()?;
-        let mut version_major = vec![0u8; 4];
+        let mut version_major = vec![0; 16];
         reader.read_exact(&mut version_major)?;
-        let version_minor = reader.read_u8()?;
+        let version_minor = reader.read_u32::<LittleEndian>()?;
 
         Ok(DatDatabaseHeader {
             file_type,
