@@ -22,7 +22,7 @@ fn read_example_texture() -> Result<(), Box<dyn Error>> {
 }
 
 fn test_read_dat() -> Result<(), Box<dyn Error>> {
-    let mut file = File::open("../libac-js/out.bin")?;
+    let mut file = File::open("../ACEmulator/ACE/Dats/client_portal.dat")?;
     file.seek(SeekFrom::Start(0))?;
     let db = DatDatabase::read(&mut file)?;
 
@@ -31,7 +31,7 @@ fn test_read_dat() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn main() -> Result<(), std::io::Error> {
-    test_read_dat();
+fn main() -> Result<(), Box<dyn Error>> {
+    test_read_dat()?;
     Ok(())
 }

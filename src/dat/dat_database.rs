@@ -46,7 +46,7 @@ enum DatDatabaseType {
     Cell,
 }
 
-const DAT_HEADER_OFFSET: i64 = 0x140;
+const DAT_HEADER_OFFSET: u64 = 0x140;
 
 #[derive(Debug)]
 pub struct DatDatabaseHeader {
@@ -71,29 +71,45 @@ pub struct DatDatabaseHeader {
 
 impl DatDatabaseHeader {
     pub fn read<R: Read + Seek>(mut reader: R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
-        reader.seek(SeekFrom::Current(DAT_HEADER_OFFSET))?;
+        reader.seek(SeekFrom::Start(DAT_HEADER_OFFSET))?;
 
-        let mut version_major_value = vec![0u8; 4];
-        reader.read_exact(&mut version_major_value)?;
+        let file_type = reader.read_u32::<LittleEndian>()?;
+        let block_size = reader.read_u32::<LittleEndian>()?;
+        let file_size = reader.read_u32::<LittleEndian>()?;
+        let data_set = reader.read_u32::<LittleEndian>()?;
+        let data_subset = reader.read_u32::<LittleEndian>()?;
+        let free_head = reader.read_u32::<LittleEndian>()?;
+        let free_tail = reader.read_u32::<LittleEndian>()?;
+        let free_count = reader.read_u32::<LittleEndian>()?;
+        let btree = reader.read_u32::<LittleEndian>()?;
+        let new_lru = reader.read_u32::<LittleEndian>()?;
+        let old_lru = reader.read_u32::<LittleEndian>()?;
+        let use_lru = reader.read_u32::<LittleEndian>()? != 0;
+        let master_map_id = reader.read_u32::<LittleEndian>()?;
+        let engine_pack_version = reader.read_u32::<LittleEndian>()?;
+        let game_pack_version = reader.read_u32::<LittleEndian>()?;
+        let mut version_major = vec![0u8; 4];
+        reader.read_exact(&mut version_major)?;
+        let version_minor = reader.read_u8()?;
 
         Ok(DatDatabaseHeader {
-            file_type: reader.read_u32::<LittleEndian>()?,
-            block_size: reader.read_u32::<LittleEndian>()?,
-            file_size: reader.read_u32::<LittleEndian>()?,
-            data_set: reader.read_u32::<LittleEndian>()?,
-            data_subset: reader.read_u32::<LittleEndian>()?,
-            free_head: reader.read_u32::<LittleEndian>()?,
-            free_tail: reader.read_u32::<LittleEndian>()?,
-            free_count: reader.read_u32::<LittleEndian>()?,
-            btree: reader.read_u32::<LittleEndian>()?,
-            new_lru: reader.read_u32::<LittleEndian>()?,
-            old_lru: reader.read_u32::<LittleEndian>()?,
-            use_lru: reader.read_u32::<LittleEndian>()? == 1,
-            master_map_id: reader.read_u32::<LittleEndian>()?,
-            engine_pack_version: reader.read_u32::<LittleEndian>()?,
-            game_pack_version: reader.read_u32::<LittleEndian>()?,
-            version_major: version_major_value,
-            version_minor: reader.read_u8()?,
+            file_type,
+            block_size,
+            file_size,
+            data_set,
+            data_subset,
+            free_head,
+            free_tail,
+            free_count,
+            btree,
+            new_lru,
+            old_lru,
+            use_lru,
+            master_map_id,
+            engine_pack_version,
+            game_pack_version,
+            version_major,
+            version_minor,
         })
     }
 }
@@ -201,8 +217,12 @@ pub struct DatDatabase {
 
 impl DatDatabase {
     pub fn read<R: Read + Seek>(mut reader: R) -> Result<DatDatabase, Box<dyn Error>> {
-        let header: DatDatabaseHeader = Self::read_header(&mut reader)?;
+        println!("{:?}", reader.stream_position()?);
 
+        let header: DatDatabaseHeader = DatDatabaseHeader::read(&mut reader)?;
+
+        println!("{:?}", header);
+        println!("{:?}", reader.stream_position()?);
         let root_dir = DatDirectory::read(reader.by_ref(), header.btree, header.block_size)?;
         root_dir.read_all(reader)?;
 
@@ -210,9 +230,5 @@ impl DatDatabase {
             header,
             files: Some(vec![]), // TODO: Maybe don't use Option or pre-allocation
         })
-    }
-
-    fn read_header<R: Read + Seek>(reader: R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
-        DatDatabaseHeader::read(reader)
     }
 }
