@@ -3,6 +3,7 @@ use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use image::{DynamicImage, ImageBuffer, RgbaImage};
 use num_traits::FromPrimitive;
+use std::io::{Error, ErrorKind, Read};
 use std::{fs::File, io::BufWriter};
 
 use super::dat_file::DatFileRead;
@@ -19,15 +20,15 @@ pub struct Texture {
 }
 
 impl DatFileRead for Texture {
-    fn read<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+    fn read<R: Read>(reader: &mut R) -> Result<Self, Error> {
         let unknown = reader.read_i32::<LittleEndian>()?;
         let width = reader.read_i32::<LittleEndian>()?;
         let height = reader.read_i32::<LittleEndian>()?;
 
         let format_value = reader.read_i32::<LittleEndian>()?;
         let format = FromPrimitive::from_i32(format_value).ok_or_else(|| {
-            std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
+            Error::new(
+                ErrorKind::InvalidData,
                 format!("Invalid pixel format: {}", format_value),
             )
         })?;
@@ -69,7 +70,7 @@ impl Texture {
     /// export underlying file buffer to rgba-ordered Vec<u8>
     ///
     /// Normalizes input into [R,G,B,A] to simplify downstream code
-    pub fn export(&self) -> Result<Vec<u8>, std::io::Error> {
+    pub fn export(&self) -> Result<Vec<u8>, Error> {
         match self.format {
             SurfacePixelFormat::PFID_R8G8B8 => {
                 // TODO: This is untested (PFID_A8R8G8B8 is tested)
@@ -100,7 +101,7 @@ impl Texture {
         }
     }
 
-    pub fn to_image(&self, scale: u32) -> Result<DynamicImage, std::io::Error> {
+    pub fn to_image(&self, scale: u32) -> Result<DynamicImage, Error> {
         let buf = self.export()?;
         let img: RgbaImage = ImageBuffer::from_raw(self.width as u32, self.height as u32, buf)
             .expect("Failed to create ImageBuffer from exported texture.");
@@ -118,7 +119,7 @@ impl Texture {
         Ok(dynamic_image)
     }
 
-    pub fn to_png(&self, path: &str, scale: u32) -> Result<(), std::io::Error> {
+    pub fn to_png(&self, path: &str, scale: u32) -> Result<(), Error> {
         let image = self.to_image(scale)?;
         let file = File::create(path)?;
         let mut writer = BufWriter::new(file);
