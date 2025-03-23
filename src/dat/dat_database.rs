@@ -11,7 +11,7 @@ pub enum DatFileType {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct DatFile {
+pub struct DatDirectoryEntry {
     pub bit_flags: u32,
     pub object_id: u32,
     pub file_offset: u32,
@@ -20,9 +20,9 @@ pub struct DatFile {
     pub iteration: u32,
 }
 
-impl DatFile {
-    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatFile, Box<dyn Error>> {
-        Ok(DatFile {
+impl DatDirectoryEntry {
+    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatDirectoryEntry, Box<dyn Error>> {
+        Ok(DatDirectoryEntry {
             bit_flags: reader.read_u32::<LittleEndian>()?,
             object_id: reader.read_u32::<LittleEndian>()?,
             file_offset: reader.read_u32::<LittleEndian>()?,
@@ -157,7 +157,7 @@ impl DatReader {
 pub struct DatDirectoryHeader {
     branches: Vec<u32>,
     entry_count: u32,
-    entries: Vec<DatFile>,
+    entries: Vec<DatDirectoryEntry>,
 }
 
 impl DatDirectoryHeader {
@@ -173,7 +173,7 @@ impl DatDirectoryHeader {
         let mut entries = vec![];
 
         for _ in 0..entry_count {
-            entries.push(DatFile::read(reader)?);
+            entries.push(DatDirectoryEntry::read(reader)?);
         }
 
         Ok(DatDirectoryHeader {
@@ -220,9 +220,15 @@ impl DatDirectory {
         })
     }
 
-    fn list_files(&self, files_list: &mut Vec<DatFile>) -> Result<(), Box<dyn Error>> {
-        for i in 0..self.directories.len() {
-            self.directories[i].list_files(files_list)?;
+    fn list_files(
+        &self,
+        files_list: &mut Vec<DatDirectoryEntry>,
+        recursive: bool,
+    ) -> Result<(), Box<dyn Error>> {
+        if recursive {
+            for i in 0..self.directories.len() {
+                self.directories[i].list_files(files_list, recursive)?;
+            }
         }
 
         for i in 0..self.header.entries.len() {
@@ -247,9 +253,9 @@ impl DatDatabase {
         Ok(DatDatabase { header, root_dir })
     }
 
-    pub fn list_files(&self) -> Result<Vec<DatFile>, Box<dyn Error>> {
-        let mut files_list: Vec<DatFile> = Vec::new();
-        self.root_dir.list_files(&mut files_list)?;
+    pub fn list_files(&self, recursive: bool) -> Result<Vec<DatDirectoryEntry>, Box<dyn Error>> {
+        let mut files_list: Vec<DatDirectoryEntry> = Vec::new();
+        self.root_dir.list_files(&mut files_list, recursive)?;
 
         Ok(files_list)
     }
