@@ -26,7 +26,9 @@ fn test_read_dat() -> Result<(), Box<dyn Error>> {
     file.seek(SeekFrom::Start(0))?;
     let db = DatDatabase::read(&mut file)?;
 
-    println!("{:?}", db);
+    let files = db.list_files()?;
+
+    println!("{:?}", files.len());
 
     Ok(())
 }

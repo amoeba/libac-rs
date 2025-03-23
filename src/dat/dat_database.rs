@@ -1,7 +1,7 @@
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::{
     error::Error,
-    io::{Cursor, Read, Seek, SeekFrom},
+    io::{Cursor, Read, Seek, SeekFrom, Write},
 };
 
 #[derive(Debug)]
@@ -10,7 +10,7 @@ pub enum DatFileType {
     Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct DatFile {
     pub bit_flags: u32,
     pub object_id: u32,
@@ -21,7 +21,7 @@ pub struct DatFile {
 }
 
 impl DatFile {
-    pub fn read<R: Read + Seek>(mut reader: R) -> Result<DatFile, Box<dyn Error>> {
+    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatFile, Box<dyn Error>> {
         Ok(DatFile {
             bit_flags: reader.read_u32::<LittleEndian>()?,
             object_id: reader.read_u32::<LittleEndian>()?,
@@ -70,7 +70,7 @@ pub struct DatDatabaseHeader {
 }
 
 impl DatDatabaseHeader {
-    pub fn read<R: Read + Seek>(mut reader: R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
+    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
         reader.seek(SeekFrom::Start(DAT_HEADER_OFFSET))?;
 
         let file_type = reader.read_u32::<LittleEndian>()?;
@@ -119,36 +119,36 @@ pub struct DatReader {}
 
 impl DatReader {
     pub fn read<R: Read + Seek>(
-        mut reader: R,
+        reader: &mut R,
         offset: u32,
         size: u32,
         block_size: u32,
     ) -> Result<Vec<u8>, Box<dyn Error>> {
-        reader.seek(SeekFrom::Current(offset as i64))?;
-        let mut buffer = vec![0; block_size as usize];
+        reader.seek(SeekFrom::Start(offset as u64))?;
 
+        let mut buffer = vec![0; size as usize];
+        let mut writer = Cursor::new(&mut buffer);
         let mut left_to_read = size;
         let mut next_address = reader.read_u32::<LittleEndian>()?;
-        let mut buffer_offset = 0;
 
         while size > 0 {
-            if size < block_size {
+            if left_to_read < block_size {
                 let mut data: Vec<u8> = vec![0; left_to_read as usize];
-                reader.read_exact(&mut data);
-                buffer[buffer_offset..buffer_offset + data.len()].copy_from_slice(&data);
+                reader.read_exact(&mut data)?;
+                writer.write_all(&data)?;
 
                 break;
             } else {
                 let mut data: Vec<u8> = vec![0; (block_size as usize) - 4];
-                reader.read_exact(&mut data);
-                buffer[buffer_offset..buffer_offset + data.len()].copy_from_slice(&data);
+                reader.read_exact(&mut data)?;
+                writer.write_all(&data)?;
 
-                buffer_offset += (block_size as usize) - 4;
                 reader.seek(SeekFrom::Start(next_address as u64))?;
                 next_address = reader.read_u32::<LittleEndian>()?;
                 left_to_read -= block_size - 4;
             }
         }
+
         Ok(buffer)
     }
 }
@@ -161,10 +161,10 @@ pub struct DatDirectoryHeader {
 }
 
 impl DatDirectoryHeader {
-    pub fn read<R: Read + Seek>(mut reader: R) -> Result<DatDirectoryHeader, Box<dyn Error>> {
+    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatDirectoryHeader, Box<dyn Error>> {
         let mut branches = vec![0; 62];
 
-        for i in 0..62 {
+        for i in 0..branches.len() {
             branches[i] = reader.read_u32::<LittleEndian>()?;
         }
 
@@ -173,7 +173,7 @@ impl DatDirectoryHeader {
         let mut entries = vec![];
 
         for _ in 0..entries.len() {
-            entries.push(DatFile::read(&mut reader)?);
+            entries.push(DatFile::read(reader)?);
         }
 
         Ok(DatDirectoryHeader {
@@ -187,24 +187,56 @@ impl DatDirectoryHeader {
 const DAT_DIRECTORY_HEADER_OBJECT_SIZE: u32 = 0x6B4;
 
 #[derive(Debug)]
-pub struct DatDirectory {}
+pub struct DatDirectory {
+    header: DatDirectoryHeader,
+    directories: Vec<DatDirectory>,
+}
 
 impl DatDirectory {
     pub fn read<R: Read + Seek>(
-        mut reader: R,
+        reader: &mut R,
         offset: u32,
         block_size: u32,
     ) -> Result<DatDirectory, Box<dyn Error>> {
         // Read DatDirectoryHeader
         let header_buf =
             DatReader::read(reader, offset, DAT_DIRECTORY_HEADER_OBJECT_SIZE, block_size)?;
-        let header_reader = Cursor::new(header_buf);
-        let header = DatDirectoryHeader::read(header_reader)?;
+        let mut header_reader = Cursor::new(header_buf);
+        let header = DatDirectoryHeader::read(&mut header_reader)?;
 
-        Ok(DatDirectory {})
+        let mut directories: Vec<DatDirectory> = Vec::new();
+
+        // Recurse only if we're not a leaf
+        if header.branches[0] != 0 {
+            for i in 0..header.entry_count + 1 {
+                let dir = DatDirectory::read(reader, header.branches[i as usize], block_size)?;
+                directories.push(dir);
+            }
+        }
+
+        Ok(DatDirectory {
+            header,
+            directories,
+        })
     }
 
-    pub fn read_all<R: Read + Seek>(&self, reader: R) -> Result<(), Box<dyn Error>> {
+    fn list_files(&self, files_list: &mut Vec<DatFile>) -> Result<(), Box<dyn Error>> {
+        println!("list_files; list is {}", files_list.len());
+        for i in 0..self.directories.len() {
+            self.directories[i].list_files(files_list)?;
+        }
+
+        // TODO: Make sure this is right
+        for i in 0..self.header.entries.len() {
+            // Debugging
+            println!(
+                "entry_count: {}; entries_len: {}",
+                self.header.entry_count,
+                self.header.entries.len()
+            );
+            files_list.push(self.header.entries[i as usize]);
+        }
+
         Ok(())
     }
 }
@@ -212,23 +244,21 @@ impl DatDirectory {
 #[derive(Debug)]
 pub struct DatDatabase {
     header: DatDatabaseHeader,
-    files: Option<Vec<DatFile>>,
+    root_dir: DatDirectory,
 }
 
 impl DatDatabase {
-    pub fn read<R: Read + Seek>(mut reader: R) -> Result<DatDatabase, Box<dyn Error>> {
-        println!("{:?}", reader.stream_position()?);
+    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatDatabase, Box<dyn Error>> {
+        let header: DatDatabaseHeader = DatDatabaseHeader::read(reader)?;
+        let root_dir = DatDirectory::read(reader, header.btree, header.block_size)?;
 
-        let header: DatDatabaseHeader = DatDatabaseHeader::read(&mut reader)?;
+        Ok(DatDatabase { header, root_dir })
+    }
 
-        println!("{:?}", header);
-        println!("{:?}", reader.stream_position()?);
-        let root_dir = DatDirectory::read(reader.by_ref(), header.btree, header.block_size)?;
-        root_dir.read_all(reader)?;
+    pub fn list_files(&self) -> Result<Vec<DatFile>, Box<dyn Error>> {
+        let mut files_list: Vec<DatFile> = Vec::new();
+        self.root_dir.list_files(&mut files_list)?;
 
-        Ok(DatDatabase {
-            header,
-            files: Some(vec![]), // TODO: Maybe don't use Option or pre-allocation
-        })
+        Ok(files_list)
     }
 }
