@@ -221,19 +221,11 @@ impl DatDirectory {
     }
 
     fn list_files(&self, files_list: &mut Vec<DatFile>) -> Result<(), Box<dyn Error>> {
-        println!("list_files; list is {}", files_list.len());
         for i in 0..self.directories.len() {
             self.directories[i].list_files(files_list)?;
         }
 
-        // TODO: Make sure this is right
         for i in 0..self.header.entries.len() {
-            // Debugging
-            println!(
-                "entry_count: {}; entries_len: {}",
-                self.header.entry_count,
-                self.header.entries.len()
-            );
             files_list.push(self.header.entries[i as usize]);
         }
 
