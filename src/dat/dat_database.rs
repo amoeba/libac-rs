@@ -172,7 +172,7 @@ impl DatDirectoryHeader {
 
         let mut entries = vec![];
 
-        for _ in 0..entries.len() {
+        for _ in 0..entry_count {
             entries.push(DatFile::read(reader)?);
         }
 
