@@ -57,7 +57,43 @@ fn test_read_dat() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn example_extract_icon() -> Result<(), Box<dyn Error>> {
+    let mut db_file = File::open("../ACEmulator/ACE/Dats/client_portal.dat")?;
+    db_file.seek(SeekFrom::Start(0))?;
+    let db = DatDatabase::read(&mut db_file)?;
+
+    let files = db.list_files(true)?;
+
+    // WIP: Iterate over files
+    for file in files {
+        match file.file_type() {
+            libac_rs::dat::dat_database::DatFileType::Texture => {
+                db_file.seek(SeekFrom::Start(file.file_offset as u64))?;
+
+                println!("offset: {}", file.file_offset);
+                let mut buffer = vec![0; file.file_size as usize];
+                db_file.read_exact(&mut buffer)?;
+
+                let mut reader = Cursor::new(buffer);
+                let dat_file: DatFile<Texture> = DatFile::read(&mut reader)?;
+                let texture = dat_file.inner;
+
+                if texture.width == 32 && texture.height == 32 {
+                    println!("texture is 32x32");
+                    break;
+                }
+            }
+            libac_rs::dat::dat_database::DatFileType::Unknown => {
+                // println!();
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
-    test_read_dat()?;
+    example_extract_icon()?;
+
     Ok(())
 }
