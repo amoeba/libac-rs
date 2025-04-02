@@ -4,8 +4,8 @@ use std::{
 };
 
 use super::{
-    constants::DAT_DIRECTORY_HEADER_OBJECT_SIZE, dat_directory_entry::DatDirectoryEntry,
-    dat_directory_header::DatDirectoryHeader, dat_reader::DatBlockReader,
+    constants::DAT_DIRECTORY_HEADER_OBJECT_SIZE, dat_block_reader::DatBlockReader,
+    dat_directory_entry::DatDirectoryEntry, dat_directory_header::DatDirectoryHeader,
 };
 
 #[derive(Debug)]
