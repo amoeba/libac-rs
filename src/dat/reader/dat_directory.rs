@@ -5,7 +5,7 @@ use std::{
 
 use super::{
     constants::DAT_DIRECTORY_HEADER_OBJECT_SIZE, dat_directory_entry::DatDirectoryEntry,
-    dat_directory_header::DatDirectoryHeader, dat_reader::DatReader,
+    dat_directory_header::DatDirectoryHeader, dat_reader::DatBlockReader,
 };
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl DatDirectory {
     ) -> Result<DatDirectory, Box<dyn Error>> {
         // Read DatDirectoryHeader
         let header_buf =
-            DatReader::read(reader, offset, DAT_DIRECTORY_HEADER_OBJECT_SIZE, block_size)?;
+            DatBlockReader::read(reader, offset, DAT_DIRECTORY_HEADER_OBJECT_SIZE, block_size)?;
         let mut header_reader = Cursor::new(header_buf);
         let header = DatDirectoryHeader::read(&mut header_reader)?;
 

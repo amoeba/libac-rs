@@ -6,7 +6,7 @@ use std::{
 
 use libac_rs::dat::{
     file_types::{dat_file::DatFile, texture::Texture},
-    reader::{dat_database::DatDatabase, dat_file_type::DatFileType, dat_reader::DatReader},
+    reader::{dat_database::DatDatabase, dat_file_type::DatFileType, dat_reader::DatBlockReader},
 };
 
 fn example_extract_icon() -> Result<(), Box<dyn Error>> {
@@ -22,7 +22,7 @@ fn example_extract_icon() -> Result<(), Box<dyn Error>> {
     }
 
     for file in files {
-        let dat_file_buffer = DatReader::read(
+        let dat_file_buffer = DatBlockReader::read(
             &mut db_file,
             file.file_offset,
             file.file_size,

@@ -6,9 +6,9 @@ use std::{
 use byteorder::{LittleEndian, ReadBytesExt};
 
 #[derive(Debug)]
-pub struct DatReader {}
+pub struct DatBlockReader {}
 
-impl DatReader {
+impl DatBlockReader {
     pub fn read<R: Read + Seek>(
         reader: &mut R,
         offset: u32,
