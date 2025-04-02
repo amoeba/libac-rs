@@ -1,4 +1,5 @@
 pub mod constants;
+pub mod dat_block_reader;
 pub mod dat_database;
 pub mod dat_database_header;
 pub mod dat_database_type;
@@ -6,5 +7,4 @@ pub mod dat_directory;
 pub mod dat_directory_entry;
 pub mod dat_directory_header;
 pub mod dat_file_type;
-pub mod dat_reader;
 pub mod http_reader;
