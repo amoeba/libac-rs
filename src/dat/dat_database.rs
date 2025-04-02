@@ -51,7 +51,7 @@ const DAT_HEADER_OFFSET: u64 = 0x140;
 #[derive(Debug)]
 pub struct DatDatabaseHeader {
     file_type: u32,
-    block_size: u32,
+    pub block_size: u32,
     file_size: u32,
     data_set: u32,
     data_subset: u32,
@@ -241,8 +241,8 @@ impl DatDirectory {
 
 #[derive(Debug)]
 pub struct DatDatabase {
-    header: DatDatabaseHeader,
-    root_dir: DatDirectory,
+    pub header: DatDatabaseHeader,
+    pub root_dir: DatDirectory,
 }
 
 impl DatDatabase {

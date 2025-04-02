@@ -1,11 +1,11 @@
 use std::{
     error::Error,
-    fs::File,
-    io::{Cursor, Read, Seek, SeekFrom},
+    fs::{self, File, create_dir},
+    io::{Cursor, Read, Seek, SeekFrom, Write},
 };
 
 use libac_rs::dat::{
-    dat_database::DatDatabase,
+    dat_database::{DatDatabase, DatReader},
     file_types::{
         dat_file::{DatFile, DatFileRead},
         texture::Texture,
@@ -64,27 +64,31 @@ fn example_extract_icon() -> Result<(), Box<dyn Error>> {
 
     let files = db.list_files(true)?;
 
-    // WIP: Iterate over files
+    // Set up export dir
+    if !fs::exists("export")? {
+        create_dir("export")?;
+    }
+
     for file in files {
+        let dat_file_buffer = DatReader::read(
+            &mut db_file,
+            file.file_offset,
+            file.file_size,
+            db.header.block_size,
+        )?;
+        let mut reader = Cursor::new(dat_file_buffer);
+
         match file.file_type() {
             libac_rs::dat::dat_database::DatFileType::Texture => {
-                db_file.seek(SeekFrom::Start(file.file_offset as u64))?;
-
-                println!("offset: {}", file.file_offset);
-                let mut buffer = vec![0; file.file_size as usize];
-                db_file.read_exact(&mut buffer)?;
-
-                let mut reader = Cursor::new(buffer);
                 let dat_file: DatFile<Texture> = DatFile::read(&mut reader)?;
                 let texture = dat_file.inner;
 
                 if texture.width == 32 && texture.height == 32 {
-                    println!("texture is 32x32");
-                    break;
+                    texture.to_png(&format!("./export/{}.png", dat_file.id), 1)?;
                 }
             }
             libac_rs::dat::dat_database::DatFileType::Unknown => {
-                // println!();
+                // Doing nothing for now
             }
         }
     }
