@@ -5,8 +5,8 @@ use std::{
 };
 
 use libac_rs::dat::{
-    dat_database::{DatDatabase, DatReader},
     file_types::{dat_file::DatFile, texture::Texture},
+    reader::{dat_database::DatDatabase, dat_file_type::DatFileType, dat_reader::DatReader},
 };
 
 fn example_extract_icon() -> Result<(), Box<dyn Error>> {
@@ -31,7 +31,7 @@ fn example_extract_icon() -> Result<(), Box<dyn Error>> {
         let mut reader = Cursor::new(dat_file_buffer);
 
         match file.file_type() {
-            libac_rs::dat::dat_database::DatFileType::Texture => {
+            DatFileType::Texture => {
                 let dat_file: DatFile<Texture> = DatFile::read(&mut reader)?;
                 let texture = dat_file.inner;
 
@@ -39,7 +39,7 @@ fn example_extract_icon() -> Result<(), Box<dyn Error>> {
                     texture.to_png(&format!("./export/{}.png", dat_file.id), 1)?;
                 }
             }
-            libac_rs::dat::dat_database::DatFileType::Unknown => {
+            DatFileType::Unknown => {
                 // Doing nothing for now
             }
         }
