@@ -6,7 +6,12 @@ use std::{
 
 use libac_rs::dat::{
     file_types::{dat_file::DatFile, texture::Texture},
-    reader::{dat_database::DatDatabase, dat_file_type::DatFileType, dat_reader::DatBlockReader},
+    reader::{
+        dat_database::DatDatabase,
+        dat_file_type::DatFileType,
+        dat_reader::DatBlockReader,
+        http_reader::{AsyncRead, HttpByteRangeReader},
+    },
 };
 
 fn example_extract_icon() -> Result<(), Box<dyn Error>> {
@@ -48,8 +53,20 @@ fn example_extract_icon() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    example_extract_icon()?;
+// Run a server that can fulfill this with `simple-http-server` crate
+async fn http_test() -> Result<(), Box<dyn Error>> {
+    let url = "http://devd.io:8000/client_portal.dat";
+    let mut reader = HttpByteRangeReader::new(url).await?;
+
+    // let mut buffer: Vec<u8> = vec![0; 1024];
+    // reader.read_exact(&mut buffer)?;
+    // reader.read(&mut buffer).await?;
+    let db = DatDatabase::read(&mut reader)?;
 
     Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    let _ = http_test().await;
 }
