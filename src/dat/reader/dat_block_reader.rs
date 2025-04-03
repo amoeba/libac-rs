@@ -9,7 +9,6 @@ use std::{
 pub struct DatBlockReader {}
 
 impl DatBlockReader {
-    // Original synchronous implementation
     pub fn read<R: Read + Seek>(
         reader: &mut R,
         offset: u32,
@@ -92,4 +91,25 @@ where
     let mut buf = [0u8; 4];
     reader.read_exact(&mut buf).await?;
     Ok(u32::from_le_bytes(buf))
+}
+
+// WIP: Alternative BlockReader that gets passed buffers of size block_size
+
+#[derive(Debug)]
+struct AsyncBlockReader {
+    bytes_read: usize,
+    buffer: Vec<u8>,
+}
+
+impl AsyncBlockReader {
+    pub fn create(size: usize) -> Self {
+        Self {
+            bytes_read: 0,
+            buffer: vec![0; size],
+        }
+    }
+    pub fn read_block(&mut self) -> usize {
+        // Return how much we should read
+        0
+    }
 }
