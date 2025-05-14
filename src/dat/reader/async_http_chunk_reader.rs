@@ -31,6 +31,7 @@ impl AsyncHttpChunkReader {
             .and_then(|val| val.to_str().ok())
             .and_then(|s| s.parse::<u64>().ok());
 
+        println!("Total size: {:?}", total_size);
         Ok(AsyncHttpChunkReader {
             client,
             url,
@@ -122,6 +123,11 @@ impl AsyncHttpChunkReader {
 
         buf.copy_from_slice(&fetched_bytes);
         self.current_pos += read_len; // Advance cursor
+
+        println!(
+            "Read {} bytes from {} to {}",
+            read_len, read_offset, self.current_pos
+        );
         Ok(())
     }
 

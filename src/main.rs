@@ -126,9 +126,9 @@ impl DatDatabaseReader {
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let file_url = "http://localhost:8000/client_portal.dat";
     let client = reqwest::Client::new();
-    let http_chunk_reader = AsyncHttpChunkReader::new(client, file_url.to_string()).await?;
+    let mut http_chunk_reader = AsyncHttpChunkReader::new(client, file_url.to_string()).await?;
 
-    let mut adapter = AsyncHttpIoAdapter::new(http_chunk_reader);
+    // let mut adapter = AsyncHttpIoAdapter::new(http_chunk_reader);
 
     // Example file
     let entry = DatDirectoryEntry {
@@ -143,35 +143,37 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         "Attempting to read {} bytes of data, starting with pointer at offset {}, block unit size {}.",
         entry.file_size, entry.file_offset, 1024
     );
+    let mut buf = vec![0u8; entry.file_size as usize];
+    http_chunk_reader.read(&mut buf).await?;
 
-    match AsyncDatBlockReader::read(&mut adapter, entry.file_offset, entry.file_size, 1024).await {
-        Ok(data_buffer) => {
-            println!(
-                "Successfully read {} bytes from the stream.",
-                data_buffer.len()
-            );
-            // Print first few bytes as hex for verification
-            print!("Data (hex): ");
-            for (i, byte) in data_buffer.iter().enumerate().take(32) {
-                // Print up to 32 bytes
-                print!("{:02X} ", byte);
-                if i > 0 && (i + 1) % 16 == 0 {
-                    println!(); // Newline every 16 bytes
-                }
-            }
-            println!();
-            if data_buffer.len() > 32 {
-                println!("... (and {} more bytes)", data_buffer.len() - 32);
-            }
-        }
-        Err(e) => {
-            eprintln!("Error reading from DatBlockReader: {}", e);
-            // If the error is an IoError, you might get more specific kinds
-            if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
-                eprintln!("IO Error Kind: {:?}", io_err.kind());
-            }
-        }
-    }
+    // match AsyncDatBlockReader::read(&mut adapter, entry.file_offset, entry.file_size, 1024).await {
+    //     Ok(data_buffer) => {
+    //         println!(
+    //             "Successfully read {} bytes from the stream.",
+    //             data_buffer.len()
+    //         );
+    //         // Print first few bytes as hex for verification
+    //         print!("Data (hex): ");
+    //         for (i, byte) in data_buffer.iter().enumerate().take(32) {
+    //             // Print up to 32 bytes
+    //             print!("{:02X} ", byte);
+    //             if i > 0 && (i + 1) % 16 == 0 {
+    //                 println!(); // Newline every 16 bytes
+    //             }
+    //         }
+    //         println!();
+    //         if data_buffer.len() > 32 {
+    //             println!("... (and {} more bytes)", data_buffer.len() - 32);
+    //         }
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Error reading from DatBlockReader: {}", e);
+    //         // If the error is an IoError, you might get more specific kinds
+    //         if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
+    //             eprintln!("IO Error Kind: {:?}", io_err.kind());
+    //         }
+    //     }
+    // }
 
     Ok(())
 }
