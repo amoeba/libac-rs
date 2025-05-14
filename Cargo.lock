@@ -908,6 +908,7 @@ version = "0.1.0"
 dependencies = [
  "byteorder",
  "futures",
+ "futures-util",
  "image",
  "num-derive",
  "num-traits",
