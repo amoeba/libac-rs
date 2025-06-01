@@ -151,14 +151,14 @@ impl DatFileReader {
         R: RangeReader,
     {
         let mut buffer = Vec::with_capacity(self.size);
-        let mut current_offset = start_offset;
+        let mut next_address = start_offset;
 
         while self.left_to_read > 0 {
-            let block = self.read_block(reader, current_offset).await?;
-            buffer.extend_from_slice(&block.data[4..]);
+            let block = self.read_block(reader, next_address).await?;
+            buffer.extend_from_slice(&block.data);
 
             if self.left_to_read > 0 {
-                current_offset = block.next_block_offset
+                next_address = block.next_block_offset
             }
         }
 
