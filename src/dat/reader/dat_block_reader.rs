@@ -22,12 +22,18 @@ impl DatBlockReader {
         while left_to_read > 0 {
             if left_to_read < block_size {
                 let mut data: Vec<u8> = vec![0; left_to_read as usize];
+
                 reader.read_exact(&mut data)?;
+                println!("read chunk {:?}", data);
+
                 writer.write_all(&data)?;
                 break;
             } else {
                 let mut data: Vec<u8> = vec![0; (block_size as usize) - 4];
+
                 reader.read_exact(&mut data)?;
+                println!("read chunk {:?}", data);
+
                 writer.write_all(&data)?;
                 reader.seek(SeekFrom::Start(next_address as u64))?;
                 next_address = reader.read_u32::<LittleEndian>()?;
