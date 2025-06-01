@@ -214,7 +214,8 @@ async fn extract_new_path() -> Result<(), Box<dyn std::error::Error>> {
     let mut file_reader = FileRangeReader::new(compat_file);
     let mut reader = DatFileReader::new(size, block_size)?;
 
-    let result = reader.read_file(&mut file_reader, offset).await?;
+    let result: libac_rs::dat::reader::async_reader::DatFile =
+        reader.read_file(&mut file_reader, offset).await?;
     println!("result is {:?}, length {}", result, result.buffer.len());
 
     let mut reader = Cursor::new(result.buffer);
@@ -224,6 +225,43 @@ async fn extract_new_path() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+async fn extract_all_textures() -> Result<(), Box<dyn std::error::Error>> {
+    let mut db_file = File::open("../../ACEmulator/ACE/Dats/client_portal.dat")?;
+    db_file.seek(SeekFrom::Start(0))?;
+    let db = DatDatabase::read(&mut db_file)?;
+
+    let files = db.list_files(true)?;
+
+    // Set up export dir
+    if !fs::exists("export")? {
+        create_dir("export")?;
+    }
+    let db_file_path = "../../ACEmulator/ACE/Dats/client_portal.dat";
+    let db_file = tokio::fs::File::open(&db_file_path).await?;
+
+    let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(db_file);
+    let mut file_reader = FileRangeReader::new(compat_file);
+
+    for file in files {
+        if file.file_type() != DatFileType::Texture {
+            continue;
+        }
+        println!("Process texture file: {:?}", file);
+        let mut reader =
+            DatFileReader::new(file.file_size as usize, db.header.block_size as usize)?;
+
+        let result: libac_rs::dat::reader::async_reader::DatFile =
+            reader.read_file(&mut file_reader, file.file_offset).await?;
+
+        let mut reader: Cursor<_> = Cursor::new(result.buffer);
+
+        let dat_file: DatFile<Texture> = DatFile::read(&mut reader)?;
+        let texture = dat_file.inner;
+
+        texture.to_png(&format!("./export/{}.png", dat_file.id), 1)?;
+    }
+    Ok(())
+}
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // remove all files in the export subdirectory
@@ -238,6 +276,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     extract_old_path()?;
     extract_new_path().await?;
+    extract_all_textures().await?;
 
     Ok(())
 }
