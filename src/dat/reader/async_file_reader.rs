@@ -116,7 +116,7 @@ pub struct DatBlock {
 
 /// Contains the complete file data after reading all blocks
 #[derive(Debug)]
-pub struct DatFile {
+pub struct ChangeMeDatFile {
     /// Combined data from all blocks
     pub buffer: Vec<u8>,
 }
@@ -146,7 +146,7 @@ impl DatFileReader {
         &mut self,
         reader: &mut R,
         start_offset: u32,
-    ) -> Result<DatFile, Box<dyn std::error::Error>>
+    ) -> Result<ChangeMeDatFile, Box<dyn std::error::Error>>
     where
         R: RangeReader,
     {
@@ -162,7 +162,7 @@ impl DatFileReader {
             }
         }
 
-        Ok(DatFile { buffer })
+        Ok(ChangeMeDatFile { buffer })
     }
 
     /// Read a single block from the given offset

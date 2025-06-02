@@ -5,15 +5,12 @@ use std::{
 };
 
 use libac_rs::dat::{
-    file_types::{
-        dat_file::{DatFile, DatFileRead},
-        texture::Texture,
-    },
+    enums::dat_file_type::DatFileType,
+    file_types::{dat_file::DatFile, texture::Texture},
     reader::{
-        async_reader::{DatFileReader, FileRangeReader},
+        async_file_reader::{DatFileReader, FileRangeReader},
         dat_block_reader::DatBlockReader,
         dat_database::DatDatabase,
-        dat_file_type::DatFileType,
     },
 };
 
@@ -214,7 +211,7 @@ async fn extract_new_path() -> Result<(), Box<dyn std::error::Error>> {
     let mut file_reader = FileRangeReader::new(compat_file);
     let mut reader = DatFileReader::new(size, block_size)?;
 
-    let result: libac_rs::dat::reader::async_reader::DatFile =
+    let result: libac_rs::dat::reader::async_file_reader::ChangeMeDatFile =
         reader.read_file(&mut file_reader, offset).await?;
     println!("result is {:?}, length {}", result, result.buffer.len());
 
@@ -250,7 +247,7 @@ async fn extract_all_textures() -> Result<(), Box<dyn std::error::Error>> {
         let mut reader =
             DatFileReader::new(file.file_size as usize, db.header.block_size as usize)?;
 
-        let result: libac_rs::dat::reader::async_reader::DatFile =
+        let result: libac_rs::dat::reader::async_file_reader::ChangeMeDatFile =
             reader.read_file(&mut file_reader, file.file_offset).await?;
 
         let mut reader: Cursor<_> = Cursor::new(result.buffer);
