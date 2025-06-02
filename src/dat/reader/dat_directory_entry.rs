@@ -5,7 +5,7 @@ use std::{
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
-use super::dat_file_type::DatFileType;
+use crate::dat::enums::dat_file_type::DatFileType;
 
 #[derive(Debug, Clone, Copy)]
 pub struct DatDirectoryEntry {
