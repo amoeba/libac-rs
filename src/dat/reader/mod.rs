@@ -1,5 +1,4 @@
 pub mod async_reader;
-pub mod constants;
 pub mod dat_block_reader;
 pub mod dat_database;
 pub mod dat_database_header;

@@ -4,9 +4,11 @@ use std::{
 };
 
 use super::{
-    constants::DAT_DIRECTORY_HEADER_OBJECT_SIZE, dat_block_reader::DatBlockReader,
-    dat_directory_entry::DatDirectoryEntry, dat_directory_header::DatDirectoryHeader,
+    dat_block_reader::DatBlockReader, dat_directory_entry::DatDirectoryEntry,
+    dat_directory_header::DatDirectoryHeader,
 };
+
+pub const DAT_DIRECTORY_HEADER_OBJECT_SIZE: u32 = 0x6B4;
 
 #[derive(Debug)]
 pub struct DatDirectory {

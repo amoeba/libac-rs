@@ -5,7 +5,7 @@ use std::{
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
-use super::constants::DAT_HEADER_OFFSET;
+pub const DAT_HEADER_OFFSET: u64 = 0x140;
 
 #[derive(Debug)]
 pub struct DatDatabaseHeader {
