@@ -15,10 +15,12 @@ impl DatBlockReader {
         block_size: u32,
     ) -> Result<Vec<u8>, Box<dyn Error>> {
         reader.seek(SeekFrom::Start(offset as u64))?;
+
         let mut buffer = vec![0; size as usize];
         let mut writer = Cursor::new(&mut buffer);
         let mut left_to_read = size;
         let mut next_address = reader.read_u32::<LittleEndian>()?;
+
         while left_to_read > 0 {
             if left_to_read < block_size {
                 let mut data: Vec<u8> = vec![0; left_to_read as usize];
