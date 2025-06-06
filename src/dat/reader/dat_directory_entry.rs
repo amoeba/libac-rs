@@ -5,7 +5,7 @@ use std::{
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
-use crate::dat::enums::dat_file_type::DatFileType;
+use crate::dat::enums::dat_file_type::{DatFileSubtype, DatFileType};
 
 #[derive(Debug, Clone, Copy)]
 pub struct DatDirectoryEntry {
@@ -34,5 +34,11 @@ impl DatDirectoryEntry {
             0x06000000..=0x07FFFFFF => DatFileType::Texture,
             _ => DatFileType::Unknown,
         }
+    }
+
+    // WIP: Use this to let datfiles be specialized things like icons
+    pub fn file_subtype(&self) -> DatFileSubtype {
+        // TODO
+        DatFileSubtype::Unknown
     }
 }
