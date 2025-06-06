@@ -11,5 +11,6 @@ image = "0.25.5"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
 reqwest = "0.12.15"
+strum = { version = "0.27.1", features = ["derive"] }
 tokio = { version = "1.44.1", features = ["full", "rt-multi-thread"] }
 tokio-util = { version = "0.7.15", features = ["compat"] }
