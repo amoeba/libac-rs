@@ -1,18 +1,14 @@
 pub mod cli_helper;
 
-use std::{error::Error, io::Cursor, path::Path, ptr::read};
+use std::{error::Error, io::Cursor};
 
 use clap::{Parser, Subcommand};
 use libac_rs::dat::{
-    file_types::{
-        dat_file::{self, DatFile, DatFileRead},
-        texture::{self, Texture},
-    },
+    file_types::{dat_file::DatFile, texture::Texture},
     reader::async_file_reader::{DatFileReader, FileRangeReader},
 };
-use tokio::fs::File;
 
-use crate::cli_helper::{extract_texture_by_id, find_file_by_id, index_dat};
+use crate::cli_helper::{find_file_by_id, index_dat};
 
 #[derive(Parser)]
 #[command(name = "dat")]
