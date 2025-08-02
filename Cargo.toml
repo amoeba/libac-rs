@@ -5,13 +5,22 @@ edition = "2024"
 
 [dependencies]
 byteorder = "1.5.0"
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"], optional = true }
 futures = "0.3"
 futures-util = "0.3.31"
 image = "0.25.5"
 num-derive = "0.4.2"
 num-traits = "0.2.19"
-reqwest = "0.12.15"
+reqwest = { version = "0.12.15", optional = true }
 strum = { version = "0.27.1", features = ["derive"] }
-tokio = { version = "1.44.1", features = ["full", "rt-multi-thread"] }
-tokio-util = { version = "0.7.15", features = ["compat"] }
+tokio = { version = "1.44.1", features = [
+  "full",
+  "rt-multi-thread",
+], optional = true }
+tokio-util = { version = "0.7.15", features = ["compat"], optional = true }
+
+[features]
+default = ["cli", "http", "tokio"]
+tokio = ["dep:tokio", "dep:tokio-util"]
+cli = ["dep:clap"]
+http = ["dep:reqwest"]

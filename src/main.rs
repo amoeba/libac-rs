@@ -2,13 +2,8 @@ pub mod cli_helper;
 
 use std::{error::Error, io::Cursor};
 
-use clap::{Parser, Subcommand};
-use libac_rs::dat::{
-    file_types::{dat_file::DatFile, texture::Texture},
-    reader::async_file_reader::{DatFileReader, FileRangeReader},
-};
-
 use crate::cli_helper::{find_file_by_id, index_dat};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "dat")]
@@ -34,8 +29,14 @@ enum Commands {
     },
 }
 
+#[cfg(feature = "tokio")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    use libac_rs::dat::{
+        file_types::{dat_file::DatFile, texture::Texture},
+        reader::async_file_reader::{DatFileReader, FileRangeReader},
+    };
+
     let cli = Cli::parse();
 
     match cli.command {
@@ -54,21 +55,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             println!("Found file: {:?}", dat_file);
 
+            // Read the file into a buffer
+            // TODO: This is messy
+            let file = tokio::fs::File::open(&dat_file).await?;
+            let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(file);
+            let mut file_reader = FileRangeReader::new(compat_file);
+            let mut reader = DatFileReader::new(
+                found_file.file_size as usize,
+                dat.header.block_size as usize,
+            )?;
+            let result = reader
+                .read_file(&mut file_reader, found_file.file_offset)
+                .await
+                .unwrap();
+
+            let mut y = Cursor::new(result.buffer);
+
             match found_file.file_type() {
                 libac_rs::dat::enums::dat_file_type::DatFileType::Texture => {
-                    let file = tokio::fs::File::open(&dat_file).await?;
-                    let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(file);
-                    let mut file_reader = FileRangeReader::new(compat_file);
-                    let mut reader = DatFileReader::new(
-                        found_file.file_size as usize,
-                        dat.header.block_size as usize,
-                    )?;
-                    let result = reader
-                        .read_file(&mut file_reader, found_file.file_offset)
-                        .await
-                        .unwrap();
-
-                    let mut y = Cursor::new(result.buffer);
                     let outer_file: DatFile<Texture> = DatFile::read(&mut y)?;
                     let texture = outer_file.inner;
                     let output_path = format!("{}.png", object_id);
@@ -82,6 +86,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     );
                 }
             }
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(not(feature = "tokio"))]
+fn main() -> Result<(), Box<dyn Error>> {
+    let cli = Cli::parse();
+
+    match cli.command {
+        Commands::Extract {
+            dat_file,
+            object_id,
+            output_dir,
+        } => {
+            println!(
+                "Extract: {:?}, {:?}, {:?}!",
+                dat_file, object_id, output_dir
+            );
         }
     }
 
