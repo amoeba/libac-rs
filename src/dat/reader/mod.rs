@@ -8,5 +8,5 @@ pub mod dat_directory_header;
 #[cfg(feature = "http")]
 pub mod http_reader;
 
-#[cfg(feature = "tokio")]
+#[cfg(feature = "async")]
 pub mod async_file_reader;

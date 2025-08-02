@@ -5,23 +5,24 @@ edition = "2024"
 
 [dependencies]
 byteorder = "1.5.0"
-clap = { version = "4.5", features = ["derive"], optional = true }
-futures = "0.3"
-futures-util = "0.3.31"
-image = "0.25.5"
+image = { version = "0.25.5", features = ["png"] }
 num-derive = "0.4.2"
 num-traits = "0.2.19"
-reqwest = { version = "0.12.15", optional = true }
 strum = { version = "0.27.1", features = ["derive"] }
+
+clap = { version = "4.5", features = ["derive"], optional = true }
+futures = { version = "0.3", optional = true }
+futures-util = { version = "0.3.31", optional = true }
 tokio = { version = "1.44.1", features = [
   "full",
   "rt-multi-thread",
 ], optional = true }
 tokio-util = { version = "0.7.15", features = ["compat"], optional = true }
+reqwest = { version = "0.12.15", optional = true }
 
 [features]
-default = ["core", "cli", "http", "tokio"]
+default = ["core", "cli", "http", "async"]
 core = []
-tokio = ["dep:tokio", "dep:tokio-util"]
+async = ["dep:tokio", "dep:tokio-util", "dep:futures", "dep:futures-util"]
 cli = ["dep:clap"]
 http = ["dep:reqwest"]

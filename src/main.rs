@@ -29,7 +29,7 @@ enum Commands {
     },
 }
 
-#[cfg(feature = "tokio")]
+#[cfg(feature = "async")]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     use libac_rs::dat::{
@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[cfg(not(feature = "tokio"))]
+#[cfg(not(feature = "async"))]
 fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
