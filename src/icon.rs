@@ -23,6 +23,7 @@ use image::{DynamicImage, ImageBuffer, Pixel, Rgba, RgbaImage};
 
 use crate::dat::file_types::texture::Texture;
 
+#[derive(Debug)]
 pub struct Icon {
     pub width: u32,
     pub height: u32,

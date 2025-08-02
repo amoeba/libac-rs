@@ -46,17 +46,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
             output_dir,
         } => {
             println!(
-                "Extract: {:?}, {:?}, {:?}!",
+                "cli::extract: {:?}, {:?}, {:?}!",
                 dat_file, object_id, output_dir
             );
 
             let dat = index_dat(&dat_file).await?;
+            println!("Using dat {:?}", dat);
             let found_file = find_file_by_id(&dat, &object_id).await?;
-
-            println!("Found file: {:?}", dat_file);
+            println!("Found file: {:?}", found_file);
 
             // Read the file into a buffer
             // TODO: This is messy
+
             let file = tokio::fs::File::open(&dat_file).await?;
             let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(file);
             let mut file_reader = FileRangeReader::new(compat_file);
@@ -69,11 +70,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .await
                 .unwrap();
 
-            let mut y = Cursor::new(result.buffer);
-
+            // Step 3: Convert the buffer into our file
+            // This is the common part
+            let buf = result.buffer;
+            let mut buf_reader = Cursor::new(buf);
             match found_file.file_type() {
                 libac_rs::dat::enums::dat_file_type::DatFileType::Texture => {
-                    let outer_file: DatFile<Texture> = DatFile::read(&mut y)?;
+                    let outer_file: DatFile<Texture> = DatFile::read(&mut buf_reader)?;
                     let texture = outer_file.inner;
                     let output_path = format!("{}.png", object_id);
                     texture.to_png(&output_path, 1)?;
