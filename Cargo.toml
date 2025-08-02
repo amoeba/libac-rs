@@ -20,7 +20,8 @@ tokio = { version = "1.44.1", features = [
 tokio-util = { version = "0.7.15", features = ["compat"], optional = true }
 
 [features]
-default = ["cli", "http", "tokio"]
+default = ["core", "cli", "http", "tokio"]
+core = []
 tokio = ["dep:tokio", "dep:tokio-util"]
 cli = ["dep:clap"]
 http = ["dep:reqwest"]
