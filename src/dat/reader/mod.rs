@@ -9,5 +9,5 @@ pub mod http_reader;
 #[cfg(feature = "async")]
 pub mod async_file_reader;
 
-#[cfg(feature = "worker")]
+#[cfg(feature = "cloudflare")]
 pub mod worker_r2_reader;
