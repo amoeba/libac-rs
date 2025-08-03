@@ -5,11 +5,12 @@ use std::{
     io::{Cursor, SeekFrom},
 };
 
-use libac_rs::dat::reader::dat_directory_entry::DatDirectoryEntry;
+use libac_rs::dat::reader::types::dat_database::DatDatabase;
+use libac_rs::dat::reader::types::dat_directory_entry::DatDirectoryEntry;
 use libac_rs::dat::{
     enums::dat_file_type::DatFileType,
     file_types::{dat_file::DatFile, texture::Texture},
-    reader::{dat_block_reader::DatBlockReader, dat_database::DatDatabase},
+    reader::dat_block_reader::DatBlockReader,
 };
 
 pub async fn index_dat(dat_file_path: &str) -> Result<DatDatabase, Box<dyn Error>> {

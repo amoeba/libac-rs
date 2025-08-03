@@ -3,9 +3,9 @@ use std::{
     io::{Cursor, Read, Seek},
 };
 
-use super::{
-    dat_block_reader::DatBlockReader, dat_directory_entry::DatDirectoryEntry,
-    dat_directory_header::DatDirectoryHeader,
+use crate::dat::reader::{
+    dat_block_reader::DatBlockReader,
+    types::{dat_directory_entry::DatDirectoryEntry, dat_directory_header::DatDirectoryHeader},
 };
 
 pub const DAT_DIRECTORY_HEADER_OBJECT_SIZE: u32 = 0x6B4;
