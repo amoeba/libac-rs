@@ -128,6 +128,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "Extract: {:?}, {:?}, {:?}!",
                 dat_file, object_id, output_dir
             );
+
+            // TODO
+            // 1. Determine method to use from uri
+            // 2. Do the read
         }
     }
 
