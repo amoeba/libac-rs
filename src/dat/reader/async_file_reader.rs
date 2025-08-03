@@ -1,6 +1,6 @@
 use futures::io::{AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, SeekFrom};
 
-use crate::dat::reader::{range_reader::RangeReader, types::dat_block::DatBlock};
+use crate::dat::reader::range_reader::RangeReader;
 
 /// File-based implementation of RangeReader using seek
 pub struct FileRangeReader<R> {
