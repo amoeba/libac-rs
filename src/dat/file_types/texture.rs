@@ -26,17 +26,13 @@ impl DatFileRead for Texture {
         let height = reader.read_i32::<LittleEndian>()?;
 
         let format_value = reader.read_i32::<LittleEndian>()?;
-        println!("format_value: {}", format_value);
         let format = FromPrimitive::from_i32(format_value).ok_or_else(|| {
             Error::new(
                 ErrorKind::InvalidData,
                 format!("Invalid pixel format: {}", format_value),
             )
         })?;
-        println!("format: {:?}", format);
-
         let length = reader.read_i32::<LittleEndian>()?;
-        println!("length: {:?}", length);
 
         // data
         let mut data = vec![0u8; length as usize];
