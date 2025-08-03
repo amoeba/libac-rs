@@ -3,8 +3,8 @@ use strum::{Display, EnumIter, IntoEnumIterator};
 #[derive(Clone, Debug, Display, PartialEq, EnumIter)]
 #[repr(u32)]
 pub enum DatFileType {
-    Texture = 0,
-    Unknown = 1,
+    Texture,
+    Unknown,
 }
 
 impl DatFileType {
@@ -17,7 +17,7 @@ impl DatFileType {
     }
 }
 
-#[derive(Clone, Debug, Display, PartialEq)]
+#[derive(Clone, Debug, Display, PartialEq, EnumIter)]
 #[repr(u32)]
 pub enum DatFileSubtype {
     Icon,
