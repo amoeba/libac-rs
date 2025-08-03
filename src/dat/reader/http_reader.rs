@@ -1,18 +1,38 @@
 use crate::dat::reader::range_reader::RangeReader;
 
+pub struct HttpRangeReaderOptions {
+    allow_fallback_full_read: bool,
+}
+
+impl Default for HttpRangeReaderOptions {
+    fn default() -> Self {
+        HttpRangeReaderOptions {
+            allow_fallback_full_read: false,
+        }
+    }
+}
 pub struct HttpRangeReader {
     url: String,
     client: reqwest::Client,
+    options: HttpRangeReaderOptions,
 }
 
 impl HttpRangeReader {
-    pub fn new(client: reqwest::Client, url: String) -> Self {
-        Self { url, client }
+    pub fn new(client: reqwest::Client, url: String, options: HttpRangeReaderOptions) -> Self {
+        Self {
+            url,
+            client,
+            options,
+        }
     }
 
     /// Convenience constructor that creates a default client
     pub fn with_default_client(url: String) -> Self {
-        Self::new(reqwest::Client::new(), url)
+        Self::new(
+            reqwest::Client::new(),
+            url,
+            HttpRangeReaderOptions::default(),
+        )
     }
 }
 
@@ -39,6 +59,12 @@ impl RangeReader for HttpRangeReader {
                 let bytes = response.bytes().await?;
                 Ok(bytes.to_vec())
             } else if response.status().is_success() {
+                if !self.options.allow_fallback_full_read {
+                    return Err(
+                        format!("HTTP server doesn't support range requests and falling back to reading the entire resource (allow_fallback_full_read) was disabled using options.").into(),
+                    );
+                }
+
                 // Server doesn't support ranges, but returned full content
                 // We'll take just the part we need
                 let bytes = response.bytes().await?;
