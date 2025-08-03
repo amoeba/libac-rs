@@ -46,7 +46,7 @@ enum Commands {
 async fn main() -> Result<(), Box<dyn Error>> {
     use libac_rs::dat::{
         file_types::{dat_file::DatFile, texture::Texture},
-        reader::async_file_reader::FileRangeReader,
+        reader::file_reader::FileRangeReader,
     };
 
     let cli = Cli::parse();
