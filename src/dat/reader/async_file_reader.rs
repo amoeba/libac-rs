@@ -26,6 +26,8 @@ where
         length: usize,
     ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>> {
         async move {
+            println!("read_range offset {}, length {}", offset, length);
+
             // Seek to the position
             self.reader.seek(SeekFrom::Start(offset.into())).await?;
 

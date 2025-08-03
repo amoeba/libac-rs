@@ -65,7 +65,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             );
 
             let dat = index_dat(&dat_file).await?;
-            println!("Using dat {:?}", dat);
             let found_file = find_file_by_id(&dat, &object_id).await?;
             println!("Found file: {:?}", found_file);
 
