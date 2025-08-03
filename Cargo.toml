@@ -19,6 +19,7 @@ tokio = { version = "1.44.1", features = [
 ], optional = true }
 tokio-util = { version = "0.7.15", features = ["compat"], optional = true }
 reqwest = { version = "0.12.15", optional = true }
+worker = { version = "0.3", optional = true }
 
 [features]
 default = ["core", "cli", "http", "async"]
@@ -26,3 +27,4 @@ core = []
 async = ["dep:tokio", "dep:tokio-util", "dep:futures", "dep:futures-util"]
 cli = ["dep:clap"]
 http = ["dep:reqwest"]
+cloudflare = ["dep:worker"]
