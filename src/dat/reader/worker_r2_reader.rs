@@ -1,5 +1,5 @@
 use std::error::Error;
-use worker::{Bucket, Range, console_debug, console_error};
+use worker::{Bucket, Range};
 
 use crate::dat::reader::range_reader::RangeReader;
 
