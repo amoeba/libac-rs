@@ -1,3 +1,4 @@
+pub mod dat_block;
 pub mod dat_database;
 pub mod dat_database_header;
 pub mod dat_directory;

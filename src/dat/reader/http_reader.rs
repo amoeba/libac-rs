@@ -1,119 +1,58 @@
-use std::{error::Error, io::SeekFrom};
+use crate::dat::reader::range_reader::RangeReader;
 
-use reqwest::{Client, header};
-
-pub trait AsyncRead {
-    fn read(
-        &mut self,
-        buf: &mut [u8],
-    ) -> impl std::future::Future<Output = std::io::Result<usize>> + Send;
-}
-
-pub trait AsyncSeek {
-    fn seek(
-        &mut self,
-        pos: std::io::SeekFrom,
-    ) -> impl std::future::Future<Output = std::io::Result<u64>> + Send;
-}
-
-pub struct HttpByteRangeReader {
+pub struct HttpRangeReader {
     url: String,
     client: reqwest::Client,
-    position: u64,
-    content_length: u64,
 }
 
-impl HttpByteRangeReader {
-    pub async fn new(url: &str) -> Result<Self, Box<dyn Error>> {
-        let client = Client::new();
-        let resp = client.head(url).send().await?;
-        let headers = resp.headers();
+impl HttpRangeReader {
+    pub fn new(client: reqwest::Client, url: String) -> Self {
+        Self { url, client }
+    }
 
-        // Error out if Accept-Ranges header is missing
-        headers
-            .get(header::ACCEPT_RANGES)
-            .and_then(|v| v.to_str().ok())
-            .ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::Other, "Accept-Ranges header missing")
-            })?;
-
-        let content_length = headers
-            .get(header::CONTENT_LENGTH)
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.parse::<u64>().ok())
-            .ok_or_else(|| {
-                std::io::Error::new(std::io::ErrorKind::Other, "Content-Length missing")
-            })?;
-
-        Ok(Self {
-            url: url.to_string(),
-            client,
-            position: 0,
-            content_length,
-        })
+    /// Convenience constructor that creates a default client
+    pub fn with_default_client(url: String) -> Self {
+        Self::new(reqwest::Client::new(), url)
     }
 }
 
-impl AsyncRead for HttpByteRangeReader {
-    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, std::io::Error> {
-        let range = format!(
-            "bytes={}-{}",
-            self.position,
-            self.position + buf.len() as u64 - 1
-        );
+impl RangeReader for HttpRangeReader {
+    fn read_range(
+        &mut self,
+        offset: u32,
+        length: usize,
+    ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>> + Send {
+        let end_byte = offset + length as u32 - 1;
+        let range_header = format!("bytes={}-{}", offset, end_byte);
+        let url = self.url.clone();
+        let client = self.client.clone();
 
-        let resp = self
-            .client
-            .get(&self.url)
-            .header(header::RANGE, range)
-            .send()
-            .await
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        async move {
+            let response = client
+                .get(&url)
+                .header("Range", range_header)
+                .send()
+                .await?;
 
-        let bytes = resp
-            .bytes()
-            .await
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            // Check if the server supports range requests
+            if response.status() == reqwest::StatusCode::PARTIAL_CONTENT {
+                let bytes = response.bytes().await?;
+                Ok(bytes.to_vec())
+            } else if response.status().is_success() {
+                // Server doesn't support ranges, but returned full content
+                // We'll take just the part we need
+                let bytes = response.bytes().await?;
+                let start = offset as usize;
+                let end = std::cmp::min(start + length, bytes.len());
 
-        let len = bytes.len();
-        println!("Received {} bytes", len);
-        buf[..len].copy_from_slice(&bytes);
-        self.position += len as u64;
-
-        Ok(len)
-    }
-}
-
-impl AsyncSeek for HttpByteRangeReader {
-    async fn seek(&mut self, pos: SeekFrom) -> Result<u64, std::io::Error> {
-        let new_pos = match pos {
-            SeekFrom::Start(offset) => offset,
-            SeekFrom::End(offset) => {
-                if offset > 0 {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        "Seek past end not supported",
-                    ));
+                if start >= bytes.len() {
+                    return Err("Offset beyond file size".into());
                 }
-                self.content_length.saturating_add(offset as u64)
-            }
-            SeekFrom::Current(offset) => {
-                if offset >= 0 {
-                    self.position.saturating_add(offset as u64)
-                } else {
-                    self.position.saturating_sub((-offset) as u64)
-                }
-            }
-        };
 
-        if new_pos > self.content_length {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Seek beyond content length",
-            ));
+                Ok(bytes[start..end].to_vec())
+            } else {
+                Err(format!("HTTP request failed with status: {}", response.status()).into())
+            }
         }
-
-        self.position = new_pos;
-        Ok(self.position)
     }
 }
