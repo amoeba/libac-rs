@@ -46,7 +46,7 @@ enum Commands {
 async fn main() -> Result<(), Box<dyn Error>> {
     use libac_rs::dat::{
         file_types::{dat_file::DatFile, texture::Texture},
-        reader::async_file_reader::{DatFileReader, FileRangeReader},
+        reader::async_file_reader::FileRangeReader,
     };
 
     let cli = Cli::parse();
@@ -57,6 +57,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             object_id,
             output_dir,
         } => {
+            use libac_rs::dat::reader::dat_file_reader::DatFileReader;
+
             println!(
                 "cli::extract: {:?}, {:?}, {:?}!",
                 dat_file, object_id, output_dir
@@ -70,21 +72,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
             // Read the file into a buffer
             // TODO: This is messy
 
+            // TODO: Can this setup be simplified?
             let file = tokio::fs::File::open(&dat_file).await?;
             let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(file);
+
+            // My actual code
             let mut file_reader = FileRangeReader::new(compat_file);
             let mut reader = DatFileReader::new(
                 found_file.file_size as usize,
                 dat.header.block_size as usize,
             )?;
-            let result = reader
+            let buf = reader
                 .read_file(&mut file_reader, found_file.file_offset)
                 .await
                 .unwrap();
 
             // Step 3: Convert the buffer into our file
             // This is the common part
-            let buf = result.buffer;
             let mut buf_reader = Cursor::new(buf);
             match found_file.file_type() {
                 libac_rs::dat::enums::dat_file_type::DatFileType::Texture => {

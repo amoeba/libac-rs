@@ -1,4 +1,5 @@
 pub mod dat_block_reader;
+pub mod dat_file_reader;
 pub mod range_reader;
 pub mod types;
 
