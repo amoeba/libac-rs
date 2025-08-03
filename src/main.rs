@@ -76,7 +76,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(file);
 
             // My actual code
-            let mut file_reader = FileRangeReader::new(compat_file);
+            let mut file_reader: FileRangeReader<tokio_util::compat::Compat<tokio::fs::File>> =
+                FileRangeReader::new(compat_file);
             let mut reader = DatFileReader::new(
                 found_file.file_size as usize,
                 dat.header.block_size as usize,

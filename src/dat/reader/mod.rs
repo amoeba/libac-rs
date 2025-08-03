@@ -2,6 +2,8 @@ pub mod dat_block_reader;
 pub mod dat_file_reader;
 pub mod file_reader;
 pub mod range_reader;
+pub mod sync_dat_file_reader;
+pub mod sync_file_reader;
 pub mod types;
 
 #[cfg(feature = "http")]
