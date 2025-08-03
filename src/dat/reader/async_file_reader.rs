@@ -24,7 +24,7 @@ where
         &mut self,
         offset: u32,
         length: usize,
-    ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>> + Send {
+    ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>> {
         async move {
             // Seek to the position
             self.reader.seek(SeekFrom::Start(offset.into())).await?;

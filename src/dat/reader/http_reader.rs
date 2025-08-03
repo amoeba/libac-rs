@@ -41,7 +41,7 @@ impl RangeReader for HttpRangeReader {
         &mut self,
         offset: u32,
         length: usize,
-    ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>> + Send {
+    ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>> {
         let end_byte = offset + length as u32 - 1;
         let range_header = format!("bytes={}-{}", offset, end_byte);
         let url = self.url.clone();

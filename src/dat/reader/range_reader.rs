@@ -3,5 +3,5 @@ pub trait RangeReader {
         &mut self,
         offset: u32,
         length: usize,
-    ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>> + Send;
+    ) -> impl std::future::Future<Output = Result<Vec<u8>, Box<dyn std::error::Error>>>;
 }
