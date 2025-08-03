@@ -22,9 +22,9 @@ reqwest = { version = "0.12.15", optional = true }
 worker = { version = "0.3", optional = true }
 
 [features]
-default = ["core", "cli", "http", "async"]
-core = []
-async = ["dep:tokio", "dep:tokio-util", "dep:futures", "dep:futures-util"]
+default = ["core", "cli", "http", "tokio"]
+core = ["dep:futures", "dep:futures-util"]
+tokio = ["dep:tokio", "dep:tokio-util"]
 cli = ["dep:clap"]
 http = ["dep:reqwest"]
 cloudflare = ["dep:worker"]
