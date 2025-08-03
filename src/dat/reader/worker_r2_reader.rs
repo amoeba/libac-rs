@@ -26,28 +26,20 @@ impl RangeReader for WorkerR2RangeReader {
         let key = self.key.clone();
 
         async move {
-            console_debug!("Attempting to read from key: '{}'", key);
-            console_debug!("Range: offset={}, length={}", offset, length);
-
             let range = Range::OffsetWithLength {
                 offset: offset as u64,
                 length: length as u64,
             };
 
-            let object =
-                bucket
-                    .get(&key)
-                    .range(range)
-                    .execute()
-                    .await
-                    .map_err(|e| -> Box<dyn Error> {
-                        console_error!("R2 get failed for key '{}': {:?}", key, e);
-                        format!("R2 get failed: {:?}", e).into()
-                    })?;
+            let object = bucket
+                .get(&key)
+                .range(range)
+                .execute()
+                .await
+                .map_err(|e| -> Box<dyn Error> { format!("R2 get failed: {:?}", e).into() })?;
 
             match object {
                 Some(obj) => {
-                    console_debug!("Object found! Reading body...");
                     let stream = obj
                         .body()
                         .ok_or_else(|| -> Box<dyn Error> { "No body in R2 object".into() })?;
@@ -55,13 +47,9 @@ impl RangeReader for WorkerR2RangeReader {
                     let bytes = stream.bytes().await.map_err(|e| -> Box<dyn Error> {
                         format!("Failed to read bytes: {:?}", e).into()
                     })?;
-                    console_debug!("Successfully read {} bytes", bytes.len());
                     Ok(bytes.to_vec())
                 }
-                None => {
-                    console_error!("Object not found in R2 bucket for key: '{}'", key);
-                    Err("Object not found in R2 bucket".into())
-                }
+                None => Err("Object not found in R2 bucket".into()),
             }
         }
     }
