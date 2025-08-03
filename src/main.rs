@@ -19,13 +19,25 @@ enum Commands {
         #[arg(
             help = "Path to DAT file (e.g., ./client_portal.dat)",
             short('f'),
-            long("dat_file")
+            long("file")
         )]
         dat_file: String,
         #[arg(help = "Object ID to extract (e.g., 0321)")]
         object_id: String,
         #[arg(short, long, default_value = "./")]
         output_dir: String,
+    },
+    Read {
+        #[arg(
+            help = "Path or URI to DAT file (e.g., ./client_portal.dat)",
+            short('f'),
+            long("file")
+        )]
+        uri: String,
+        #[arg(short('o'), long("offset"), help = "Object ID to extract (e.g., 0321)")]
+        offset: String,
+        #[arg(short('s'), long("size"))]
+        file_size: String,
     },
 }
 
@@ -89,6 +101,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     );
                 }
             }
+        }
+        Commands::Read {
+            uri,
+            offset,
+            file_size,
+        } => {
+            println!("uri: {}, offset: {}, file_size: {}", uri, offset, file_size);
         }
     }
 
