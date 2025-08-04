@@ -4,6 +4,7 @@ use std::{error::Error, io::Cursor};
 
 use crate::cli_helper::{find_file_by_id, index_dat};
 use clap::{Parser, Subcommand};
+use libac_rs::dat::enums::dat_file_type::DatFileType;
 
 #[derive(Parser)]
 #[command(name = "dat")]
@@ -44,6 +45,8 @@ enum Commands {
         dat_file: String,
         #[arg(long, help = "Print only the total count of files")]
         count: bool,
+        #[arg(long = "type", help = "Filter files by type (Texture, Unknown)")]
+        file_type: Option<String>,
     },
 }
 
@@ -119,15 +122,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
         } => {
             println!("uri: {}, offset: {}, file_size: {}", uri, offset, file_size);
         }
-        Commands::List { dat_file, count } => {
+        Commands::List { dat_file, count, file_type } => {
             let dat = index_dat(&dat_file).await?;
-            let files = dat.list_files(true)?;
+            let mut files = dat.list_files(true)?;
+            
+            // Filter by type if specified
+            if let Some(type_str) = file_type {
+                let filter_type = match type_str.to_lowercase().as_str() {
+                    "texture" => DatFileType::Texture,
+                    "unknown" => DatFileType::Unknown,
+                    _ => {
+                        eprintln!("Invalid file type: {}. Valid types are: Texture, Unknown", type_str);
+                        return Ok(());
+                    }
+                };
+                files.retain(|file| file.file_type() == filter_type);
+            }
             
             if count {
                 println!("{}", files.len());
             } else {
+                println!("{:<10} {:<10} {:<10} {:<10}", "ID", "OFFSET", "SIZE", "TYPE");
                 for file in files {
-                    println!("{:08X}", file.object_id);
+                    println!("{:08X} {:<10} {:<10} {:<10}", 
+                        file.object_id,
+                        file.file_offset,
+                        file.file_size,
+                        file.file_type()
+                    );
                 }
             }
         }
@@ -165,16 +187,35 @@ fn main() -> Result<(), Box<dyn Error>> {
         } => {
             println!("uri: {}, offset: {}, file_size: {}", uri, offset, file_size);
         }
-        Commands::List { dat_file, count } => {
+        Commands::List { dat_file, count, file_type } => {
             let mut db_file = File::open(&dat_file)?;
             let dat = DatDatabase::read(&mut db_file)?;
-            let files = dat.list_files(true)?;
+            let mut files = dat.list_files(true)?;
+            
+            // Filter by type if specified
+            if let Some(type_str) = file_type {
+                let filter_type = match type_str.to_lowercase().as_str() {
+                    "texture" => DatFileType::Texture,
+                    "unknown" => DatFileType::Unknown,
+                    _ => {
+                        eprintln!("Invalid file type: {}. Valid types are: Texture, Unknown", type_str);
+                        return Ok(());
+                    }
+                };
+                files.retain(|file| file.file_type() == filter_type);
+            }
             
             if count {
                 println!("{}", files.len());
             } else {
+                println!("{:<10} {:<10} {:<10} {:<10}", "ID", "OFFSET", "SIZE", "TYPE");
                 for file in files {
-                    println!("{:08X}", file.object_id);
+                    println!("{:08X} {:<10} {:<10} {:<10}", 
+                        file.object_id,
+                        file.file_offset,
+                        file.file_size,
+                        file.file_type()
+                    );
                 }
             }
         }
