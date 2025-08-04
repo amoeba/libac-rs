@@ -2,7 +2,7 @@ pub mod cli_helper;
 
 use std::{error::Error, io::Cursor};
 
-use crate::cli_helper::{find_file_by_id, index_dat};
+use crate::cli_helper::find_file_by_id;
 use clap::{Parser, Subcommand};
 use libac_rs::dat::enums::dat_file_type::DatFileType;
 
@@ -56,7 +56,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     use libac_rs::dat::{
         file_types::{dat_file::DatFile, texture::Texture},
         reader::file_reader::FileRangeReader,
+        reader::types::dat_database::DatDatabase,
     };
+    use std::fs::File;
 
     let cli = Cli::parse();
 
@@ -123,7 +125,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("uri: {}, offset: {}, file_size: {}", uri, offset, file_size);
         }
         Commands::List { dat_file, count, file_type } => {
-            let dat = index_dat(&dat_file).await?;
+            let mut db_file = std::fs::File::open(&dat_file)?;
+            let dat = DatDatabase::read(&mut db_file)?;
             let mut files = dat.list_files(true)?;
             
             // Filter by type if specified

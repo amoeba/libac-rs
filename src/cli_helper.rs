@@ -13,12 +13,6 @@ use libac_rs::dat::{
     reader::dat_block_reader::DatBlockReader,
 };
 
-pub async fn index_dat(dat_file_path: &str) -> Result<DatDatabase, Box<dyn Error>> {
-    let mut db_file = File::open(dat_file_path)?;
-    let db = DatDatabase::read(&mut db_file)?;
-
-    Ok(db)
-}
 
 pub async fn find_file_by_id(
     db: &DatDatabase,
