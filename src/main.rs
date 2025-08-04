@@ -39,6 +39,12 @@ enum Commands {
         #[arg(short('s'), long("size"))]
         file_size: String,
     },
+    List {
+        #[arg(help = "Path to DAT file")]
+        dat_file: String,
+        #[arg(long, help = "Print only the total count of files")]
+        count: bool,
+    },
 }
 
 #[cfg(feature = "tokio")]
@@ -113,6 +119,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         } => {
             println!("uri: {}, offset: {}, file_size: {}", uri, offset, file_size);
         }
+        Commands::List { dat_file, count } => {
+            let dat = index_dat(&dat_file).await?;
+            let files = dat.list_files(true)?;
+            
+            if count {
+                println!("{}", files.len());
+            } else {
+                for file in files {
+                    println!("{:08X}", file.object_id);
+                }
+            }
+        }
     }
 
     Ok(())
@@ -120,6 +138,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(not(feature = "tokio"))]
 fn main() -> Result<(), Box<dyn Error>> {
+    use std::fs::File;
+    use libac_rs::dat::reader::types::dat_database::DatDatabase;
+    
     let cli = Cli::parse();
 
     match cli.command {
@@ -136,6 +157,26 @@ fn main() -> Result<(), Box<dyn Error>> {
             // TODO
             // 1. Determine method to use from uri
             // 2. Do the read
+        }
+        Commands::Read {
+            uri,
+            offset,
+            file_size,
+        } => {
+            println!("uri: {}, offset: {}, file_size: {}", uri, offset, file_size);
+        }
+        Commands::List { dat_file, count } => {
+            let mut db_file = File::open(&dat_file)?;
+            let dat = DatDatabase::read(&mut db_file)?;
+            let files = dat.list_files(true)?;
+            
+            if count {
+                println!("{}", files.len());
+            } else {
+                for file in files {
+                    println!("{:08X}", file.object_id);
+                }
+            }
         }
     }
 
