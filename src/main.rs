@@ -55,11 +55,11 @@ enum Commands {
 async fn main() -> Result<(), Box<dyn Error>> {
     use libac_rs::dat::{
         file_types::{dat_file::DatFile, texture::Texture},
-        reader::{file_reader::FileRangeReader, range_reader::RangeReader},
-        reader::types::{dat_database::DatDatabase, dat_database_header::DatDatabaseHeader},
+        reader::file_reader::FileRangeReader,
+        reader::types::dat_database::DatDatabase,
     };
-    use std::fs::File;
-    use tokio_util::compat::TokioAsyncReadCompatExt;
+    
+    
 
     let cli = Cli::parse();
 
