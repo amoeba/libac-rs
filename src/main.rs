@@ -1,8 +1,7 @@
 pub mod cli_helper;
 
-use std::{error::Error, io::Cursor};
+use std::error::Error;
 
-use crate::cli_helper::find_file_by_id;
 use clap::{Parser, Subcommand};
 use libac_rs::dat::enums::dat_file_type::DatFileType;
 
