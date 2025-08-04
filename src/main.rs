@@ -1,7 +1,8 @@
 pub mod cli_helper;
 
-use std::error::Error;
+use std::{error::Error, io::Cursor};
 
+use crate::cli_helper::find_file_by_id;
 use clap::{Parser, Subcommand};
 use libac_rs::dat::enums::dat_file_type::DatFileType;
 
@@ -54,10 +55,11 @@ enum Commands {
 async fn main() -> Result<(), Box<dyn Error>> {
     use libac_rs::dat::{
         file_types::{dat_file::DatFile, texture::Texture},
-        reader::file_reader::FileRangeReader,
-        reader::types::dat_database::DatDatabase,
+        reader::{file_reader::FileRangeReader, range_reader::RangeReader},
+        reader::types::{dat_database::DatDatabase, dat_database_header::DatDatabaseHeader},
     };
     use std::fs::File;
+    use tokio_util::compat::TokioAsyncReadCompatExt;
 
     let cli = Cli::parse();
 
@@ -74,9 +76,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 dat_file, object_id, output_dir
             );
 
-            let mut db_file = File::open(dat_file)?;
-            let db = DatDatabase::read(&mut db_file)?;
-
+            // Use async file operations with FileRangeReader for database reading
+            let file = tokio::fs::File::open(&dat_file).await?;
+            let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(file);
+            let mut range_reader = FileRangeReader::new(compat_file);
+            
+            let dat = DatDatabase::read_async(&mut range_reader).await?;
             let found_file = find_file_by_id(&dat, &object_id).await?;
             println!("Found file: {:?}", found_file);
 
@@ -130,8 +135,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             count,
             file_type,
         } => {
-            let mut db_file = std::fs::File::open(&dat_file)?;
-            let dat = DatDatabase::read(&mut db_file)?;
+            // Use async database reading with RangeReader
+            let file = tokio::fs::File::open(&dat_file).await?;
+            let compat_file = tokio_util::compat::TokioAsyncReadCompatExt::compat(file);
+            let mut range_reader = FileRangeReader::new(compat_file);
+            
+            let dat = DatDatabase::read_async(&mut range_reader).await?;
             let mut files = dat.list_files(true)?;
 
             // Filter by type if specified

@@ -7,6 +7,7 @@ use super::{
     dat_database_header::DatDatabaseHeader, dat_directory::DatDirectory,
     dat_directory_entry::DatDirectoryEntry,
 };
+use crate::dat::reader::range_reader::RangeReader;
 
 #[derive(Debug)]
 pub struct DatDatabase {
@@ -18,6 +19,13 @@ impl DatDatabase {
     pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatDatabase, Box<dyn Error>> {
         let header: DatDatabaseHeader = DatDatabaseHeader::read(reader)?;
         let root_dir = DatDirectory::read(reader, header.btree, header.block_size)?;
+
+        Ok(DatDatabase { header, root_dir })
+    }
+
+    pub async fn read_async<R: RangeReader>(reader: &mut R) -> Result<DatDatabase, Box<dyn Error>> {
+        let header: DatDatabaseHeader = DatDatabaseHeader::read_async(reader).await?;
+        let root_dir = DatDirectory::read_async(reader, header.btree, header.block_size).await?;
 
         Ok(DatDatabase { header, root_dir })
     }

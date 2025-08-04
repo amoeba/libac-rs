@@ -5,6 +5,7 @@ use std::{
 
 use crate::dat::reader::{
     dat_block_reader::DatBlockReader,
+    range_reader::RangeReader,
     types::{dat_directory_entry::DatDirectoryEntry, dat_directory_header::DatDirectoryHeader},
 };
 
@@ -41,6 +42,34 @@ impl DatDirectory {
         Ok(DatDirectory {
             header,
             directories,
+        })
+    }
+
+    pub fn read_async<R: RangeReader>(
+        reader: &mut R,
+        offset: u32,
+        block_size: u32,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<DatDirectory, Box<dyn Error>>> + '_>> {
+        Box::pin(async move {
+            // Read DatDirectoryHeader using async block reader
+            let header_buf = DatBlockReader::read_async(reader, offset, DAT_DIRECTORY_HEADER_OBJECT_SIZE, block_size).await?;
+            let mut header_reader = Cursor::new(header_buf);
+            let header = DatDirectoryHeader::read(&mut header_reader)?;
+
+            let mut directories: Vec<DatDirectory> = Vec::new();
+
+            // Recurse only if we're not a leaf
+            if header.branches[0] != 0 {
+                for i in 0..header.entry_count + 1 {
+                    let dir = DatDirectory::read_async(reader, header.branches[i as usize], block_size).await?;
+                    directories.push(dir);
+                }
+            }
+
+            Ok(DatDirectory {
+                header,
+                directories,
+            })
         })
     }
 

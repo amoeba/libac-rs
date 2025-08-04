@@ -4,6 +4,7 @@ use std::{
 };
 
 use byteorder::{LittleEndian, ReadBytesExt};
+use crate::dat::reader::range_reader::RangeReader;
 
 pub const DAT_HEADER_OFFSET: u64 = 0x140;
 
@@ -29,9 +30,8 @@ pub struct DatDatabaseHeader {
 }
 
 impl DatDatabaseHeader {
-    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
-        reader.seek(SeekFrom::Start(DAT_HEADER_OFFSET))?;
-
+    /// Common function to parse header data from a buffer
+    fn from_buffer<R: Read>(reader: &mut R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
         let file_type = reader.read_u32::<LittleEndian>()?;
         let block_size = reader.read_u32::<LittleEndian>()?;
         let file_size = reader.read_u32::<LittleEndian>()?;
@@ -70,5 +70,21 @@ impl DatDatabaseHeader {
             version_major,
             version_minor,
         })
+    }
+
+    pub fn read<R: Read + Seek>(reader: &mut R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
+        reader.seek(SeekFrom::Start(DAT_HEADER_OFFSET))?;
+        Self::from_buffer(reader)
+    }
+
+    pub async fn read_async<R: RangeReader>(reader: &mut R) -> Result<DatDatabaseHeader, Box<dyn Error>> {
+        // Calculate the total size of the header data: 16 u32s + 16 bytes for version_major
+        const HEADER_SIZE: usize = 16 * 4 + 16;
+        
+        // Read the header data in one range read operation
+        let data = reader.read_range(DAT_HEADER_OFFSET as u32, HEADER_SIZE).await?;
+        let mut cursor = std::io::Cursor::new(data);
+        
+        Self::from_buffer(&mut cursor)
     }
 }
