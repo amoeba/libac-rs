@@ -1,5 +1,6 @@
 pub mod dat_block_reader;
 pub mod dat_file_reader;
+#[cfg(feature = "core")]
 pub mod file_reader;
 pub mod range_reader;
 pub mod sync_dat_file_reader;
